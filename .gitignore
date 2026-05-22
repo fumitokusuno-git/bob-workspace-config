@@ -1,0 +1,5 @@
+# 機密情報を除外
+**/secrets.json
+**/*api-key*
+**/*.env
+node_modules/
