@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToDoアプリ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .screen {
+            display: none;
+            padding: 30px;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* タスク一覧画面 */
+        .task-list {
+            list-style: none;
+        }
+
+        .task-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .task-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .task-item.completed {
+            opacity: 0.6;
+        }
+
+        .task-item.completed .task-name {
+            text-decoration: line-through;
+        }
+
+        .task-checkbox {
+            width: 24px;
+            height: 24px;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+
+        .task-content {
+            flex: 1;
+        }
+
+        .task-name {
+            font-size: 1.1em;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .task-meta {
+            font-size: 0.85em;
+            color: #6c757d;
+        }
+
+        .priority-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .priority-high {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .priority-medium {
+            background: #ffd93d;
+            color: #333;
+        }
+
+        .priority-low {
+            background: #6bcf7f;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        /* ボタン */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-add {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 2em;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+        }
+
+        .btn-add:hover {
+            transform: scale(1.1);
+        }
+
+        /* フォーム */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-label.required::after {
+            content: " *";
+            color: #dc3545;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .form-actions .btn {
+            flex: 1;
+        }
+
+        /* エラーメッセージ */
+        .error-message {
+            color: #dc3545;
+            font-size: 0.85em;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* 統計情報 */
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 id="headerTitle">タスク一覧</h1>
+        </div>
+
+        <!-- タスク一覧画面 -->
+        <div id="listScreen" class="screen active">
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalTasks">0</div>
+                    <div class="stat-label">全タスク</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="activeTasks">0</div>
+                    <div class="stat-label">未完了</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="completedTasks">0</div>
+                    <div class="stat-label">完了</div>
+                </div>
+            </div>
+
+            <ul id="taskList" class="task-list"></ul>
+
+            <div id="emptyState" class="empty-state">
+                <div class="empty-state-icon">📝</div>
+                <h3>タスクがありません</h3>
+                <p>右下の「+」ボタンから新しいタスクを追加しましょう</p>
+            </div>
+
+            <button class="btn-add" onclick="showAddScreen()">+</button>
+        </div>
+
+        <!-- タスク登録画面 -->
+        <div id="addScreen" class="screen">
+            <form id="addForm" onsubmit="saveTask(event)">
+                <div class="form-group">
+                    <label class="form-label required" for="taskName">タスク名</label>
+                    <input type="text" id="taskName" class="form-control" maxlength="100" placeholder="タスク名を入力">
+                    <div class="error-message" id="taskNameError">タスク名を入力してください</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="taskDetail">詳細</label>
+                    <textarea id="taskDetail" class="form-control" maxlength="500" placeholder="タスクの詳細を入力（任意）"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="taskDeadline">期限</label>
+                    <input type="date" id="taskDeadline" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="taskPriority">優先度</label>
+                    <select id="taskPriority" class="form-control">
+                        <option value="low">低</option>
+                        <option value="medium" selected>中</option>
+                        <option value="high">高</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="taskAssignee">担当者</label>
+                    <input type="text" id="taskAssignee" class="form-control" maxlength="50" placeholder="担当者名を入力（任意）">
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="showListScreen()">キャンセル</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- タスク詳細・編集画面 -->
+        <div id="editScreen" class="screen">
+            <form id="editForm" onsubmit="updateTask(event)">
+                <input type="hidden" id="editTaskId">
+
+                <div class="form-group">
+                    <label class="form-label required" for="editTaskName">タスク名</label>
+                    <input type="text" id="editTaskName" class="form-control" maxlength="100">
+                    <div class="error-message" id="editTaskNameError">タスク名を入力してください</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="editTaskDetail">詳細</label>
+                    <textarea id="editTaskDetail" class="form-control" maxlength="500"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="editTaskDeadline">期限</label>
+                    <input type="date" id="editTaskDeadline" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="editTaskPriority">優先度</label>
+                    <select id="editTaskPriority" class="form-control">
+                        <option value="low">低</option>
+                        <option value="medium">中</option>
+                        <option value="high">高</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="editTaskAssignee">担当者</label>
+                    <input type="text" id="editTaskAssignee" class="form-control" maxlength="50" placeholder="担当者名を入力（任意）">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="editTaskCompleted" class="task-checkbox">
+                        完了
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">作成日時</label>
+                    <div id="editTaskCreated" style="color: #6c757d;"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-danger" onclick="deleteTask()">削除</button>
+                    <button type="button" class="btn btn-secondary" onclick="showListScreen()">キャンセル</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ダミーデータ
+        const dummyTasks = [
+            {
+                id: 1713686400000,
+                name: 'プロジェクト企画書の作成',
+                detail: '新規プロジェクトの企画書を作成し、上司に提出する',
+                deadline: '2026-04-25',
+                priority: 'high',
+                assignee: '田中太郎',
+                completed: false,
+                createdAt: '2026-04-20T00:00:00.000Z',
+                updatedAt: '2026-04-20T00:00:00.000Z'
+            },
+            {
+                id: 1713686401000,
+                name: 'クライアントとの打ち合わせ',
+                detail: '次回プロジェクトの要件定義について議論',
+                deadline: '2026-04-23',
+                priority: 'high',
+                assignee: '佐藤花子',
+                completed: false,
+                createdAt: '2026-04-20T01:00:00.000Z',
+                updatedAt: '2026-04-20T01:00:00.000Z'
+            },
+            {
+                id: 1713686402000,
+                name: 'システム設計書のレビュー',
+                detail: '開発チームが作成した設計書を確認し、フィードバックを提供',
+                deadline: '2026-04-24',
+                priority: 'medium',
+                assignee: '鈴木一郎',
+                completed: false,
+                createdAt: '2026-04-20T02:00:00.000Z',
+                updatedAt: '2026-04-20T02:00:00.000Z'
+            },
+            {
+                id: 1713686403000,
+                name: 'データベースのバックアップ',
+                detail: '本番環境のデータベースを定期バックアップ',
+                deadline: '2026-04-22',
+                priority: 'high',
+                assignee: '高橋健太',
+                completed: false,
+                createdAt: '2026-04-20T03:00:00.000Z',
+                updatedAt: '2026-04-20T03:00:00.000Z'
+            },
+            {
+                id: 1713686404000,
+                name: 'ユーザーマニュアルの更新',
+                detail: '新機能追加に伴うマニュアルの更新作業',
+                deadline: '2026-04-28',
+                priority: 'medium',
+                assignee: '伊藤美咲',
+                completed: false,
+                createdAt: '2026-04-20T04:00:00.000Z',
+                updatedAt: '2026-04-20T04:00:00.000Z'
+            },
+            {
+                id: 1713686405000,
+                name: 'セキュリティパッチの適用',
+                detail: 'サーバーに最新のセキュリティパッチを適用',
+                deadline: '2026-04-26',
+                priority: 'high',
+                assignee: '渡辺誠',
+                completed: false,
+                createdAt: '2026-04-20T05:00:00.000Z',
+                updatedAt: '2026-04-20T05:00:00.000Z'
+            },
+            {
+                id: 1713686406000,
+                name: 'チームミーティングの準備',
+                detail: '週次ミーティングのアジェンダと資料を準備',
+                deadline: '2026-04-27',
+                priority: 'low',
+                assignee: '山本さくら',
+                completed: false,
+                createdAt: '2026-04-20T06:00:00.000Z',
+                updatedAt: '2026-04-20T06:00:00.000Z'
+            },
+            {
+                id: 1713686407000,
+                name: 'テストケースの作成',
+                detail: '新機能のテストケースを作成し、QAチームと共有',
+                deadline: '2026-04-29',
+                priority: 'medium',
+                assignee: '中村拓也',
+                completed: false,
+                createdAt: '2026-04-20T07:00:00.000Z',
+                updatedAt: '2026-04-20T07:00:00.000Z'
+            },
+            {
+                id: 1713686408000,
+                name: '月次レポートの作成',
+                detail: '先月の業務実績をまとめたレポートを作成',
+                deadline: '2026-04-30',
+                priority: 'medium',
+                assignee: '小林優子',
+                completed: true,
+                createdAt: '2026-04-19T00:00:00.000Z',
+                updatedAt: '2026-04-20T08:00:00.000Z'
+            },
+            {
+                id: 1713686409000,
+                name: 'コードレビューの実施',
+                detail: 'プルリクエストのコードレビューを実施し、承認',
+                deadline: '2026-04-23',
+                priority: 'low',
+                assignee: '加藤大輔',
+                completed: true,
+                createdAt: '2026-04-19T01:00:00.000Z',
+                updatedAt: '2026-04-20T09:00:00.000Z'
+            }
+        ];
+
+        // データ管理
+        let tasks = [];
+        let currentTaskId = null;
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            // LocalStorageからデータを読み込む
+            const savedTasks = localStorage.getItem('tasks');
+            
+            // LocalStorageにデータがない場合、またはダミーデータを強制表示
+            if (!savedTasks || JSON.parse(savedTasks).length === 0) {
+                tasks = dummyTasks;
+                saveTasks();
+            } else {
+                tasks = JSON.parse(savedTasks);
+            }
+
+            // 今日の日付を期限の最小値に設定
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('taskDeadline').min = today;
+            document.getElementById('editTaskDeadline').min = today;
+            
+            renderTasks();
+        });
+
+        // タスク一覧を表示
+        function renderTasks() {
+            const taskList = document.getElementById('taskList');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (tasks.length === 0) {
+                taskList.style.display = 'none';
+                emptyState.style.display = 'block';
+                updateStats();
+                return;
+            }
+
+            taskList.style.display = 'block';
+            emptyState.style.display = 'none';
+
+            // タスクをソート
+            const sortedTasks = [...tasks].sort((a, b) => {
+                // 完了タスクは後ろに
+                if (a.completed !== b.completed) {
+                    return a.completed ? 1 : -1;
+                }
+
+                // 未完了タスクは優先度順
+                if (!a.completed) {
+                    const priorityOrder = { high: 0, medium: 1, low: 2 };
+                    if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
+                        return priorityOrder[a.priority] - priorityOrder[b.priority];
+                    }
+
+                    // 同じ優先度なら期限順
+                    if (a.deadline && b.deadline) {
+                        return new Date(a.deadline) - new Date(b.deadline);
+                    }
+                    if (a.deadline) return -1;
+                    if (b.deadline) return 1;
+                }
+
+                // 完了タスクは作成日時の新しい順
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            });
+
+            taskList.innerHTML = sortedTasks.map(task => {
+                const priorityLabel = {
+                    high: '高',
+                    medium: '中',
+                    low: '低'
+                };
+
+                const deadlineText = task.deadline
+                    ? `期限: ${new Date(task.deadline).toLocaleDateString('ja-JP')}`
+                    : '';
+
+                const assigneeText = task.assignee
+                    ? `👤 ${escapeHtml(task.assignee)}`
+                    : '';
+
+                return `
+                    <li class="task-item ${task.completed ? 'completed' : ''}" onclick="showEditScreen(${task.id})">
+                        <input type="checkbox"
+                               class="task-checkbox"
+                               ${task.completed ? 'checked' : ''}
+                               onclick="toggleTask(event, ${task.id})">
+                        <div class="task-content">
+                            <div class="task-name">${escapeHtml(task.name)}</div>
+                            <div class="task-meta">
+                                <span class="priority-badge priority-${task.priority}">
+                                    ${priorityLabel[task.priority]}
+                                </span>
+                                ${deadlineText}
+                                ${assigneeText ? `<span style="margin-left: 8px;">${assigneeText}</span>` : ''}
+                            </div>
+                        </div>
+                    </li>
+                `;
+            }).join('');
+
+            updateStats();
+        }
+
+        // 統計情報を更新
+        function updateStats() {
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.completed).length;
+            const active = total - completed;
+
+            document.getElementById('totalTasks').textContent = total;
+            document.getElementById('activeTasks').textContent = active;
+            document.getElementById('completedTasks').textContent = completed;
+        }
+
+        // タスクの完了状態を切り替え
+        function toggleTask(event, id) {
+            event.stopPropagation();
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                saveTasks();
+                renderTasks();
+            }
+        }
+
+        // タスク登録画面を表示
+        function showAddScreen() {
+            document.getElementById('listScreen').classList.remove('active');
+            document.getElementById('addScreen').classList.add('active');
+            document.getElementById('headerTitle').textContent = 'タスク登録';
+            document.getElementById('addForm').reset();
+            document.getElementById('taskNameError').classList.remove('show');
+        }
+
+        // タスク詳細・編集画面を表示
+        function showEditScreen(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            currentTaskId = id;
+            document.getElementById('listScreen').classList.remove('active');
+            document.getElementById('editScreen').classList.add('active');
+            document.getElementById('headerTitle').textContent = 'タスク詳細';
+
+            document.getElementById('editTaskId').value = task.id;
+            document.getElementById('editTaskName').value = task.name;
+            document.getElementById('editTaskDetail').value = task.detail || '';
+            document.getElementById('editTaskDeadline').value = task.deadline || '';
+            document.getElementById('editTaskPriority').value = task.priority;
+            document.getElementById('editTaskAssignee').value = task.assignee || '';
+            document.getElementById('editTaskCompleted').checked = task.completed;
+            document.getElementById('editTaskCreated').textContent =
+                new Date(task.createdAt).toLocaleString('ja-JP');
+            document.getElementById('editTaskNameError').classList.remove('show');
+        }
+
+        // タスク一覧画面を表示
+        function showListScreen() {
+            document.getElementById('addScreen').classList.remove('active');
+            document.getElementById('editScreen').classList.remove('active');
+            document.getElementById('listScreen').classList.add('active');
+            document.getElementById('headerTitle').textContent = 'タスク一覧';
+            currentTaskId = null;
+        }
+
+        // タスクを保存
+        function saveTask(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('taskName').value.trim();
+            const nameError = document.getElementById('taskNameError');
+
+            if (!name) {
+                nameError.classList.add('show');
+                return;
+            }
+
+            nameError.classList.remove('show');
+
+            const task = {
+                id: Date.now(),
+                name: name,
+                detail: document.getElementById('taskDetail').value.trim(),
+                deadline: document.getElementById('taskDeadline').value,
+                priority: document.getElementById('taskPriority').value,
+                assignee: document.getElementById('taskAssignee').value.trim(),
+                completed: false,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            tasks.push(task);
+            saveTasks();
+            renderTasks();
+            showListScreen();
+        }
+
+        // タスクを更新
+        function updateTask(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('editTaskName').value.trim();
+            const nameError = document.getElementById('editTaskNameError');
+
+            if (!name) {
+                nameError.classList.add('show');
+                return;
+            }
+
+            nameError.classList.remove('show');
+
+            const task = tasks.find(t => t.id === currentTaskId);
+            if (task) {
+                task.name = name;
+                task.detail = document.getElementById('editTaskDetail').value.trim();
+                task.deadline = document.getElementById('editTaskDeadline').value;
+                task.priority = document.getElementById('editTaskPriority').value;
+                task.assignee = document.getElementById('editTaskAssignee').value.trim();
+                task.completed = document.getElementById('editTaskCompleted').checked;
+                task.updatedAt = new Date().toISOString();
+
+                saveTasks();
+                renderTasks();
+                showListScreen();
+            }
+        }
+
+        // タスクを削除
+        function deleteTask() {
+            if (confirm('このタスクを削除しますか?')) {
+                tasks = tasks.filter(t => t.id !== currentTaskId);
+                saveTasks();
+                renderTasks();
+                showListScreen();
+            }
+        }
+
+        // LocalStorageに保存
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // HTMLエスケープ
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

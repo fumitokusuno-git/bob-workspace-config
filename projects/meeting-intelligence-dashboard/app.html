@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meeting Intelligence Dashboard</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --surface-alt: #f8fafc;
+      --line: #d8e1ee;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --success: #16a34a;
+      --warning: #f59e0b;
+      --danger: #dc2626;
+      --high: #fee2e2;
+      --medium: #fef3c7;
+      --low: #dcfce7;
+      --shadow: 0 10px 30px rgba(37, 99, 235, 0.08);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1d4ed8, #2563eb 60%, #38bdf8);
+      color: #fff;
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      margin: 0 0 8px;
+      font-size: 2rem;
+    }
+
+    .header p {
+      margin: 0;
+      opacity: 0.95;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-alt);
+    }
+
+    .panel-header h2,
+    .panel-header h3 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .panel-body { padding: 20px; }
+    .stack { display: grid; gap: 20px; }
+    .field-grid { display: grid; gap: 14px; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    input,
+    textarea,
+    button {
+      font: inherit;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--text);
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 130px;
+      resize: vertical;
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: 3px solid rgba(37, 99, 235, 0.14);
+      border-color: var(--primary);
+    }
+
+    .hint,
+    .notice,
+    .warning-box {
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.9rem;
+    }
+
+    .hint {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+
+    .notice {
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    .warning-box {
+      background: #fff7ed;
+      color: #9a3412;
+      border: 1px solid #fdba74;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: #e5eefc; color: #1d4ed8; }
+    .btn-muted { background: #eef2f7; color: #374151; }
+    .btn-danger { background: #fee2e2; color: #b91c1c; }
+
+    .status-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .score-hero {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .score-circle {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: conic-gradient(var(--primary) calc(var(--score) * 1%), #e5e7eb 0);
+      position: relative;
+      margin: 0 auto;
+    }
+
+    .score-circle::before {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    .score-inner {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .score-inner .value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .score-inner .grade {
+      margin-top: 6px;
+      font-size: 1rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .kpi-card,
+    .recommendation,
+    .history-item,
+    .detail-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      background: #fff;
+    }
+
+    .kpi-card h4,
+    .recommendation h4,
+    .history-item h4,
+    .detail-card h4 {
+      margin: 0 0 10px;
+      font-size: 0.98rem;
+    }
+
+    .kpi-meta {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .kpi-score {
+      font-size: 1.8rem;
+      font-weight: 800;
+    }
+
+    .delta {
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .delta.pos { color: var(--success); }
+    .delta.neg { color: var(--danger); }
+
+    .bar {
+      height: 10px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .bar > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, #60a5fa, #2563eb);
+      border-radius: inherit;
+    }
+
+    .section-title {
+      margin: 0 0 12px;
+      font-size: 1rem;
+    }
+
+    .radar-wrap {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 20px;
+      background: #fff;
+    }
+
+    .recommendation.high { background: var(--high); }
+    .recommendation.medium { background: var(--medium); }
+    .recommendation.low { background: var(--low); }
+
+    .recommendations,
+    .history-list,
+    .insight-list,
+    .details-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .list {
+      margin: 8px 0 0 18px;
+      padding: 0;
+    }
+
+    .list li { margin-bottom: 4px; }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .quality-flags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .flag {
+      background: #eef2ff;
+      color: #4338ca;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .empty {
+      padding: 18px;
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      color: var(--muted);
+      text-align: center;
+      background: #fff;
+    }
+
+    .footer-note {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    canvas {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    @media (max-width: 1100px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      .container { padding: 14px; }
+      .two-col,
+      .score-hero,
+      .kpi-grid,
+      .split {
+        grid-template-columns: 1fr;
+      }
+      .score-circle {
+        width: 150px;
+        height: 150px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>📊 Meeting Intelligence Dashboard</h1>
+      <p>会議の生産性を可視化し、継続的な改善アクションにつなげるMVPアプリ</p>
+    </header>
+
+    <div class="layout">
+      <aside class="stack">
+        <section class="panel">
+          <div class="panel-header">
+            <h2>📝 会議入力</h2>
+          </div>
+          <div class="panel-body">
+            <div class="field-grid">
+              <label>会議名
+                <input id="meetingTitle" type="text" placeholder="例: 週次定例会議">
+              </label>
+
+              <div class="two-col">
+                <label>日付
+                  <input id="meetingDate" type="date">
+                </label>
+                <label>時刻
+                  <input id="meetingTime" type="time">
+                </label>
+              </div>
+
+              <div class="two-col">
+                <label>会議時間（分）
+                  <input id="meetingDuration" type="number" min="5" max="480" value="60">
+                </label>
+                <label>資料共有時間（時間前）
+                  <input id="advanceNotice" type="number" min="0" max="168" value="24">
+                </label>
+              </div>
+
+              <label>参加者（カンマ区切り）
+                <input id="participants" type="text" placeholder="例: 田中, 佐藤, 鈴木">
+              </label>
+
+              <label>事前アジェンダ
+                <textarea id="agendaText" placeholder="例:
+1. 進捗確認（15分）
+2. 課題レビュー（25分）
+3. 次回アクション決定（20分）"></textarea>
+              </label>
+
+              <label>議事録
+                <textarea id="transcriptText" placeholder="推奨形式:
+田中: 本日のアジェンダは3つです。
+佐藤: タスクAは完了しました。
+鈴木: リスクとして納期遅延が懸念です。"></textarea>
+              </label>
+
+              <div class="hint">
+                推奨入力形式は「名前: 発言」です。自由記述も分析できますが、発言多様性・沈黙分析の信頼度は下がります。
+              </div>
+
+              <div class="actions">
+                <button class="btn-primary" id="analyzeBtn">🔍 分析する</button>
+                <button class="btn-secondary" id="sampleBtn">📄 サンプル入力</button>
+                <button class="btn-muted" id="saveBtn">💾 保存</button>
+                <button class="btn-danger" id="clearBtn">🗑️ クリア</button>
+              </div>
+
+              <div id="formMessage" class="notice">準備完了。サンプル入力または手入力で分析できます。</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h3>📚 会議履歴</h3>
+          </div>
+          <div class="panel-body">
+            <div class="actions" style="margin-bottom: 14px;">
+              <button class="btn-muted" id="exportHistoryBtn">📤 履歴JSON出力</button>
+              <button class="btn-danger" id="clearHistoryBtn">履歴削除</button>
+            </div>
+            <div id="historyList" class="history-list"></div>
+          </div>
+        </section>
+      </aside>
+
+      <main class="stack">
+        <section class="panel">
+          <div class="panel-header">
+            <h2>📈 分析結果</h2>
+          </div>
+          <div class="panel-body">
+            <div id="emptyState" class="empty">まだ分析結果がありません。左側から会議情報を入力してください。</div>
+            <div id="resultArea" style="display:none;">
+              <div class="status-bar">
+                <span class="pill" id="confidencePill">信頼度: -</span>
+                <span class="pill" id="meetingPill">会議: -</span>
+                <span class="pill" id="comparisonPill">比較対象: -</span>
+              </div>
+
+              <div class="score-hero">
+                <div class="score-circle" id="scoreCircle" style="--score: 0;">
+                  <div class="score-inner">
+                    <div class="value" id="overallScore">0</div>
+                    <div class="grade" id="overallGrade">-</div>
+  <script>
+    let currentRecord = null;
+
+    function init() {
+      const now = new Date();
+      dom.meetingDate.value = now.toISOString().slice(0, 10);
+      dom.meetingTime.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      bindEvents();
+      renderHistory();
+    }
+
+    function bindEvents() {
+      dom.sampleBtn.addEventListener('click', loadSample);
+      dom.clearBtn.addEventListener('click', clearForm);
+      dom.analyzeBtn.addEventListener('click', handleAnalyze);
+      dom.saveBtn.addEventListener('click', handleSave);
+      dom.clearHistoryBtn.addEventListener('click', clearHistory);
+      dom.exportHistoryBtn.addEventListener('click', exportHistory);
+      dom.downloadReportBtn.addEventListener('click', downloadReport);
+      dom.downloadJsonBtn.addEventListener('click', downloadCurrentJson);
+    }
+
+    function loadSample() {
+      dom.meetingTitle.value = '週次定例会議';
+      dom.participants.value = '田中, 佐藤, 鈴木';
+      dom.meetingDuration.value = 60;
+      dom.advanceNotice.value = 36;
+      dom.agendaText.value = `1. 進捗共有（15分）
+2. 課題レビュー（25分）
+3. 次アクション決定（20分）`;
+      dom.transcriptText.value = `田中: 本日のアジェンダは3つです。まず進捗から確認します。
+佐藤: タスクAは完了しました。タスクBは少し遅れています。
+鈴木: リスクとしてレビュー待ちがボトルネックです。
+田中: では、タスクBのレビュー体制を見直しましょう。
+佐藤: 賛成です。私がレビュー手順を明文化します。
+鈴木: 期限は来週火曜までにしましょう。
+田中: 了解です。来週火曜までに佐藤さんがレビュー手順をまとめる、で決定します。
+田中: 次に、来週の開発優先順位ですが……
+鈴木: 別案として、障害対応を先に片付けるべきでは？
+佐藤: その点は懸念があります。現状の遅延もあるので、優先順位を再確認したいです。
+田中: では新機能は今週着手、障害対応は明日の臨時MTGで判断することにします。
+田中: 最後に次回までのアクションです。私が顧客説明資料を金曜までに更新します。`;
+      setMessage('サンプルデータを読み込みました。', 'notice');
+    }
+
+    function clearForm() {
+      dom.meetingTitle.value = '';
+      dom.participants.value = '';
+      dom.meetingDuration.value = 60;
+      dom.advanceNotice.value = 24;
+      dom.agendaText.value = '';
+      dom.transcriptText.value = '';
+      currentRecord = null;
+      clearResult();
+      setMessage('入力をクリアしました。', 'notice');
+    }
+
+    function handleAnalyze() {
+      try {
+        const input = collectInput();
+        currentRecord = analyzeMeeting(input);
+        renderAnalysis(currentRecord);
+        setMessage('分析が完了しました。必要であれば保存してください。', 'notice');
+      } catch (error) {
+        setMessage(error.message, 'warning-box');
+      }
+    }
+
+    function handleSave() {
+      try {
+        if (!currentRecord) {
+          currentRecord = analyzeMeeting(collectInput());
+          renderAnalysis(currentRecord);
+        }
+        saveRecord(currentRecord);
+        renderHistory();
+        setMessage('会議データを履歴に保存しました。', 'notice');
+      } catch (error) {
+        setMessage(error.message, 'warning-box');
+      }
+    }
+
+    function collectInput() {
+      const title = dom.meetingTitle.value.trim();
+      const date = dom.meetingDate.value;
+      const time = dom.meetingTime.value;
+      const duration = Number(dom.meetingDuration.value);
+      const advanceNotice = Number(dom.advanceNotice.value);
+      const participants = dom.participants.value.split(',').map((item) => item.trim()).filter(Boolean);
+      const agendaText = dom.agendaText.value.trim();
+      const transcriptText = dom.transcriptText.value.trim();
+
+      if (!title) throw new Error('会議名は必須です。');
+      if (!date) throw new Error('日付は必須です。');
+      if (!time) throw new Error('時刻は必須です。');
+      if (!duration || duration < 5) throw new Error('会議時間は5分以上で入力してください。');
+      if (!participants.length) throw new Error('参加者を1名以上入力してください。');
+      if (transcriptText.length < 80) throw new Error('議事録は80文字以上入力してください。');
+
+      return {
+        meeting_id: `mtg_${Date.now()}`,
+        created_at: new Date().toISOString(),
+        meeting_info: { title, date, time, duration_minutes: duration, participants },
+        pre_meeting: { agenda_text: agendaText, advance_notice_hours: Number.isFinite(advanceNotice) ? advanceNotice : 0 },
+        transcript: { raw_text: transcriptText }
+      };
+    }
+
+    function analyzeMeeting(input) {
+      const participants = input.meeting_info.participants;
+      const transcript = input.transcript.raw_text;
+      const agendaText = input.pre_meeting.agenda_text;
+      const duration = input.meeting_info.duration_minutes;
+      const participantTurns = extractSpeakerTurns(transcript, participants);
+      const speakerNames = Object.keys(participantTurns).filter((key) => participantTurns[key].length);
+      const transcriptLength = transcript.length;
+      const hasStructuredSpeakers = speakerNames.length >= Math.max(2, Math.ceil(participants.length * 0.5));
+      const decisions = extractDecisions(transcript, participants);
+      const agendaItems = parseAgenda(agendaText);
+      const voice = analyzeVoice(participantTurns, participants, transcriptLength);
+      const silence = analyzeSilence(transcript, duration);
+      const agendaCoverage = analyzeAgendaCoverage(agendaItems, transcript, duration);
+      const kpiScores = {
+        pre_meeting_readiness: scoreReadiness(agendaItems, input.pre_meeting.advance_notice_hours, transcript, agendaText),
+        decision_density: scoreDecisionDensity(decisions, duration),
+        voice_diversity: scoreVoiceDiversity(voice),
+        silent_cost_reduction: scoreSilentCostReduction(silence),
+        agenda_adherence: scoreAgendaAdherence(agendaCoverage)
+      };
+      const overallScore = calculateOverallScore(kpiScores);
+      const grade = getGrade(overallScore);
+      const quality = determineQuality({
+        hasAgenda: agendaItems.length > 0,
+        transcriptLength,
+        hasStructuredSpeakers,
+        silenceEstimated: true,
+        decisionsFound: decisions.length > 0
+      });
+      return {
+        ...input,
+        analysis_result: {
+          analyzed_at: new Date().toISOString(),
+          analysis_confidence: quality.confidence,
+          data_quality_flags: quality.flags,
+          assumptions: quality.assumptions,
+          overall_score: overallScore,
+          grade,
+          grade_description: getGradeDescription(grade),
+          overall_reasoning: buildOverallReasoning(kpiScores, quality),
+          kpi_scores: kpiScores,
+          decisions,
+          voice_analysis: voice,
+          silent_periods: silence.periods,
+          total_silence_seconds: silence.totalSeconds,
+          silence_percentage: silence.percentage,
+          agenda_coverage: agendaCoverage,
+          recommendations: buildRecommendations(kpiScores, decisions, agendaCoverage, voice, silence),
+          highlights: buildHighlights(kpiScores, decisions, voice, agendaCoverage)
+        },
+        summary: { title: input.meeting_info.title, date: input.meeting_info.date, overall_score: overallScore, grade },
+        comparison: findPreviousByTitle(input.meeting_info.title)
+      };
+    }
+
+    function extractSpeakerTurns(transcript, participants) {
+      const turns = {};
+      participants.forEach((name) => { turns[name] = []; });
+      transcript.split(/\n+/).map((line) => line.trim()).filter(Boolean).forEach((line) => {
+        const match = line.match(/^([^:：]{1,20})[:：]\s*(.+)$/);
+        if (!match) return;
+        const rawName = match[1].trim();
+        const speech = match[2].trim();
+        const normalized = participants.find((p) => rawName.includes(p) || p.includes(rawName)) || rawName;
+        if (!turns[normalized]) turns[normalized] = [];
+        turns[normalized].push(speech);
+      });
+      return turns;
+    }
+
+    function parseAgenda(text) {
+      if (!text.trim()) return [];
+      return text.split(/\n+/).map((line) => line.trim()).filter(Boolean).map((line, index) => {
+        const title = line.replace(/^\d+[\.\)]?\s*/, '').trim();
+        const minuteMatch = title.match(/(\d+)\s*分/);
+        return { order: index + 1, title, allocated_minutes: minuteMatch ? Number(minuteMatch[1]) : 0 };
+      });
+    }
+
+    function extractDecisions(transcript, participants) {
+      const keywords = ['決定', '決まり', '合意', '承認', '進め', 'ことにします', 'とします', 'しましょう'];
+      return transcript.split(/\n+/).map((line) => line.trim()).filter(Boolean).flatMap((line, index) => {
+        if (!keywords.some((keyword) => line.includes(keyword))) return [];
+        const content = line.replace(/^[^:：]+[:：]\s*/, '');
+        const assignees = participants.filter((name) => content.includes(name));
+        const deadlineMatch = content.match(/(今週|来週|月曜|火曜|水曜|木曜|金曜|土曜|日曜|[0-9]{1,2}\/[0-9]{1,2}|[0-9]{1,2}日|金曜まで|火曜まで)/);
+        const specificityScore = (content.length > 15 ? 3 : 1) + (assignees.length ? 3 : 0) + (deadlineMatch ? 2 : 0) + (content.includes('ため') || content.includes('ので') ? 2 : 0);
+        return [{
+          id: `dec_${index + 1}`,
+          content,
+          assignees,
+          deadline: deadlineMatch ? deadlineMatch[0] : null,
+          specificity_score: Math.min(10, specificityScore),
+          issues: [
+            ...(assignees.length ? [] : ['担当者未記載']),
+            ...(deadlineMatch ? [] : ['期限未記載'])
+          ]
+        }];
+      });
+    }
+
+    function analyzeVoice(turns, participants, transcriptLength) {
+      const totals = {};
+      let totalChars = 0;
+      participants.forEach((name) => {
+        const joined = (turns[name] || []).join('');
+        totals[name] = joined.length;
+        totalChars += joined.length;
+      });
+      const distribution = {};
+      participants.forEach((name) => {
+        const percentage = totalChars === 0 ? Math.round(100 / participants.length) : Math.round((totals[name] / totalChars) * 100);
+        distribution[name] = {
+          percentage,
+          estimated_minutes: Math.round((percentage / 100) * Math.max(1, transcriptLength / 28)),
+          turn_count: (turns[name] || []).length
+        };
+      });
+      const shares = participants.map((name) => distribution[name].percentage / 100);
+      const criticalMatches = (Object.values(turns).flat().join('\n').match(/懸念|リスク|反対|別の視点|問題|不安/g) || []).length;
+      const silentParticipants = participants.filter((name) => !(turns[name] || []).length);
+      return {
+        speaker_distribution: distribution,
+        gini_coefficient: Number(calculateGini(shares).toFixed(2)),
+        critical_opinions_count: criticalMatches,
+        silent_participants: silentParticipants,
+        participation_rate: Math.round(((participants.length - silentParticipants.length) / participants.length) * 100)
+      };
+    }
+
+    function analyzeSilence(transcript, duration) {
+      const markers = [
+        { regex: /（沈黙）/g, seconds: 30, context: '明示的な沈黙' },
+        { regex: /しばらく間/g, seconds: 90, context: '間が空いた記述' },
+        { regex: /\.\.\./g, seconds: 10, context: '省略・間' },
+        { regex: /どう思いますか|どうでしょうか|質問はありますか/g, seconds: 20, context: '問いかけ後の停滞推定' }
+      ];
+      const periods = [];
+      let totalSeconds = 0;
+      markers.forEach((marker, index) => {
+        const matches = transcript.match(marker.regex) || [];
+        matches.forEach((_, matchIndex) => {
+          totalSeconds += marker.seconds;
+          periods.push({
+            id: `silence_${index + 1}_${matchIndex + 1}`,
+            duration_seconds: marker.seconds,
+            context: marker.context,
+            context_type: marker.context.includes('問いかけ') ? 'awkward' : 'estimated',
+            estimated: true
+          });
+        });
+      });
+      if (!periods.length) {
+        periods.push({
+          id: 'silence_estimated_1',
+          duration_seconds: Math.round(duration * 60 * 0.04),
+          context: '明示的な沈黙記述なしのため低めに推定',
+          context_type: 'estimated',
+          estimated: true
+        });
+        totalSeconds = periods[0].duration_seconds;
+      }
+      return {
+        periods,
+        totalSeconds,
+        percentage: Math.min(100, Math.round((totalSeconds / (duration * 60)) * 100))
+      };
+    }
+
+    function analyzeAgendaCoverage(agendaItems, transcript, duration) {
+      if (!agendaItems.length) {
+        return {
+          items: [],
+          completed_count: 0,
+          total_count: 0,
+          completion_rate: 0,
+          off_topic_minutes: Math.round(duration * 0.2),
+          off_topic_percentage: 20
+        };
+      }
+      const items = agendaItems.map((item) => {
+        const words = item.title.replace(/[（(].*?[）)]/g, '').split(/[・\s]/).filter(Boolean);
+        const matched = words.some((word) => word.length >= 2 && transcript.includes(word));
+        return {
+          ...item,
+          status: matched ? 'completed' : 'incomplete',
+          actual_minutes: matched ? (item.allocated_minutes || Math.round(duration / agendaItems.length)) : 0,
+          completion_percentage: matched ? 100 : 0
+        };
+      });
+      const completedCount = items.filter((item) => item.status === 'completed').length;
+      const offTopicIndicators = (transcript.match(/話は変わりますが|そういえば|ついでに|別件|雑談/g) || []).length;
+      const offTopicMinutes = Math.min(duration, offTopicIndicators * 4);
+      return {
+        items,
+        completed_count: completedCount,
+        total_count: agendaItems.length,
+        completion_rate: Math.round((completedCount / agendaItems.length) * 100),
+        off_topic_minutes: offTopicMinutes,
+        off_topic_percentage: Math.round((offTopicMinutes / duration) * 100)
+      };
+    }
+  </script>
+                  </div>
+                </div>
+                <div>
+                  <h3 class="section-title">総合評価</h3>
+                  <p id="gradeDescription" style="margin-top: 0; font-size: 1.05rem; font-weight: 700;"></p>
+                  <p id="overallReason" class="subtle"></p>
+                  <div class="quality-flags" id="qualityFlags"></div>
+                </div>
+              </div>
+
+              <div class="kpi-grid" id="kpiGrid"></div>
+
+              <div class="radar-wrap">
+                <h3 class="section-title">バランス分析</h3>
+                <canvas id="radarCanvas" width="520" height="320"></canvas>
+                <p class="footer-note">青: 今回の会議 / 緑破線: 目標値 / 灰: 同一会議名の前回結果</p>
+              </div>
+
+              <div class="split">
+                <section>
+                  <h3 class="section-title">💡 改善提案</h3>
+                  <div id="recommendations" class="recommendations"></div>
+                </section>
+                <section>
+                  <h3 class="section-title">🧠 分析ハイライト</h3>
+                  <div id="insights" class="insight-list"></div>
+                </section>
+              </div>
+
+              <section style="margin-top: 20px;">
+                <h3 class="section-title">🔎 詳細分析</h3>
+                <div id="detailsList" class="details-list"></div>
+              </section>
+
+              <div class="actions" style="margin-top: 20px;">
+                <button class="btn-primary" id="downloadReportBtn">📥 Markdownレポート</button>
+                <button class="btn-secondary" id="downloadJsonBtn">📥 JSONエクスポート</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'meeting-intelligence-history-v1';
+    const KPI_META = [
+      { key: 'pre_meeting_readiness', label: '事前準備度', target: 80 },
+      { key: 'decision_density', label: '決定密度', target: 70 },
+      { key: 'voice_diversity', label: '発言多様性', target: 75 },
+      { key: 'silent_cost_reduction', label: 'サイレント削減', target: 85 },
+      { key: 'agenda_adherence', label: 'アジェンダ遵守', target: 80 }
+    ];
+
+    const dom = {
+      meetingTitle: document.getElementById('meetingTitle'),
+      meetingDate: document.getElementById('meetingDate'),
+      meetingTime: document.getElementById('meetingTime'),
+      meetingDuration: document.getElementById('meetingDuration'),
+      advanceNotice: document.getElementById('advanceNotice'),
+      participants: document.getElementById('participants'),
+      agendaText: document.getElementById('agendaText'),
+      transcriptText: document.getElementById('transcriptText'),
+      analyzeBtn: document.getElementById('analyzeBtn'),
+      sampleBtn: document.getElementById('sampleBtn'),
+      saveBtn: document.getElementById('saveBtn'),
+      clearBtn: document.getElementById('clearBtn'),
+      formMessage: document.getElementById('formMessage'),
+      historyList: document.getElementById('historyList'),
+      exportHistoryBtn: document.getElementById('exportHistoryBtn'),
+      clearHistoryBtn: document.getElementById('clearHistoryBtn'),
+      emptyState: document.getElementById('emptyState'),
+      resultArea: document.getElementById('resultArea'),
+      confidencePill: document.getElementById('confidencePill'),
+      meetingPill: document.getElementById('meetingPill'),
+      comparisonPill: document.getElementById('comparisonPill'),
+      scoreCircle: document.getElementById('scoreCircle'),
+      overallScore: document.getElementById('overallScore'),
+      overallGrade: document.getElementById('overallGrade'),
+      gradeDescription: document.getElementById('gradeDescription'),
+      overallReason: document.getElementById('overallReason'),
+      qualityFlags: document.getElementById('qualityFlags'),
+      kpiGrid: document.getElementById('kpiGrid'),
+      recommendations: document.getElementById('recommendations'),
+      insights: document.getElementById('insights'),
+      detailsList: document.getElementById('detailsList'),
+      downloadReportBtn: document.getElementById('downloadReportBtn'),
+      downloadJsonBtn: document.getElementById('downloadJsonBtn'),
+      radarCanvas: document.getElementById('radarCanvas')
+    };
+  </script>
+</body>
+</html>
+  <script>
+    function scoreReadiness(agendaItems, advanceNotice, transcript, agendaText) {
+      const agendaClarity = agendaItems.length === 0 ? 10 : Math.min(35, 12 + agendaItems.length * 6 + (agendaText.includes('目的') || agendaText.includes('分') ? 8 : 0));
+      const materialsQuality = Math.min(35, advanceNotice >= 48 ? 32 : advanceNotice >= 24 ? 24 : advanceNotice > 0 ? 15 : 6);
+      const sharing = Math.min(30, transcript.includes('事前') || transcript.includes('共有') ? 20 : 10);
+      return makeKpi(clamp(agendaClarity + materialsQuality + sharing), 80, {
+        agenda_clarity: agendaClarity,
+        materials_quality: materialsQuality,
+        advance_sharing: sharing
+      }, agendaItems.length ? 'アジェンダと共有準備をもとに評価' : 'アジェンダ不足のため保守的に評価');
+    }
+
+    function scoreDecisionDensity(decisions, duration) {
+      const target = duration <= 30 ? 2 : 3;
+      const countScore = Math.min(50, Math.round((decisions.length / target) * 50));
+      const specificity = decisions.length ? Math.round(decisions.reduce((sum, item) => sum + item.specificity_score, 0) / decisions.length * 5) : 0;
+      return makeKpi(clamp(countScore + specificity), 70, {
+        decision_count: countScore,
+        specificity
+      }, decisions.length ? '決定件数と具体性をもとに評価' : '決定事項が見当たらず低スコア');
+    }
+
+    function scoreVoiceDiversity(voice) {
+      const distribution = Math.round((1 - voice.gini_coefficient) * 50);
+      const critical = Math.min(30, voice.critical_opinions_count * 10);
+      const participation = Math.round((voice.participation_rate / 100) * 20);
+      return makeKpi(clamp(distribution + critical + participation), 75, {
+        distribution,
+        critical_opinions: critical,
+        participation_rate: participation
+      }, '発言分散、反対意見、参加率をもとに評価');
+    }
+
+    function scoreSilentCostReduction(silence) {
+      const silenceRatioScore = Math.max(0, 60 - silence.percentage * 4);
+      const contextQuality = silence.periods.some((item) => item.context_type === 'awkward') ? 14 : 28;
+      return makeKpi(clamp(Math.round(silenceRatioScore + contextQuality)), 85, {
+        silence_ratio: Math.round(silenceRatioScore),
+        context_quality: contextQuality
+      }, '議事録上の沈黙記述から推定評価');
+    }
+
+    function scoreAgendaAdherence(agendaCoverage) {
+      if (!agendaCoverage.total_count) {
+        return makeKpi(35, 80, { completion_rate: 0, off_topic_reduction: 15, time_allocation: 20 }, 'アジェンダ未入力のため一貫性ベースで保守的評価');
+      }
+      const completion = Math.round((agendaCoverage.completion_rate / 100) * 50);
+      const offTopicReduction = Math.max(0, 30 - agendaCoverage.off_topic_percentage);
+      const timeAllocation = agendaCoverage.completion_rate >= 100 ? 20 : agendaCoverage.completion_rate >= 67 ? 14 : 8;
+      return makeKpi(clamp(completion + offTopicReduction + timeAllocation), 80, {
+        completion_rate: completion,
+        off_topic_reduction: offTopicReduction,
+        time_allocation: timeAllocation
+      }, 'アジェンダ消化率と脱線推定をもとに評価');
+    }
+
+    function makeKpi(score, target, breakdown, reasoning) {
+      const rounded = clamp(Math.round(score));
+      return { score: rounded, target, gap: rounded - target, grade: getGrade(rounded), breakdown, reasoning };
+    }
+
+    function determineQuality({ hasAgenda, transcriptLength, hasStructuredSpeakers, silenceEstimated, decisionsFound }) {
+      const flags = [];
+      const assumptions = [];
+      if (!hasAgenda) flags.push('agenda_missing');
+      if (transcriptLength < 200) flags.push('transcript_too_short');
+      if (!hasStructuredSpeakers) flags.push('speakers_not_clearly_identified');
+      if (silenceEstimated) flags.push('silence_estimated_from_textual_cues');
+      if (!decisionsFound) flags.push('decision_evidence_weak');
+      if (!hasStructuredSpeakers) assumptions.push('発言割合は自由記述から概算');
+      if (silenceEstimated) assumptions.push('沈黙時間はテキスト上の手がかりから推定');
+      if (!hasAgenda) assumptions.push('アジェンダ遵守度は議論の一貫性から推定');
+      if (transcriptLength < 200) assumptions.push('議事録量が少ないため保守的に採点');
+      let confidence = 'high';
+      if (flags.length >= 4) confidence = 'low';
+      else if (flags.length >= 2) confidence = 'medium';
+      return { confidence, flags, assumptions };
+    }
+
+    function buildRecommendations(kpis, decisions, agendaCoverage, voice, silence) {
+      const recommendations = [];
+      if (kpis.pre_meeting_readiness.score < 80) {
+        recommendations.push({
+          priority: 'high',
+          title: '事前準備を強化する',
+          issue: 'アジェンダの明確さまたは事前共有量が不足しています。',
+          actions: ['会議48時間前までに資料とアジェンダを共有する', '各議題に目的・期待成果・時間配分を追記する', '事前に確認してほしい論点を1〜3点明記する'],
+          impact: '会議内の説明時間削減と準備度向上が見込めます。'
+        });
+      }
+      if (kpis.decision_density.score < 70) {
+        recommendations.push({
+          priority: 'high',
+          title: '決定事項を明文化する',
+          issue: decisions.length ? '決定はあるものの担当者・期限が不足しています。' : '決定事項が十分に抽出できませんでした。',
+          actions: ['会議の最後5分を決定事項確認に固定する', 'What / Who / When の3点を議事録に必ず残す', '決定後すぐにタスク管理へ転記する'],
+          impact: '実行率と会議の生産性向上が期待できます。'
+        });
+      }
+      if (kpis.voice_diversity.score < 75) {
+        recommendations.push({
+          priority: 'medium',
+          title: '発言の偏りを減らす',
+          issue: `参加率 ${voice.participation_rate}%、ジニ係数 ${voice.gini_coefficient} です。`,
+          actions: ['ファシリテーターが未発言者に順番に意見を求める', '反対意見歓迎を明示する', '自由記述ではなく話者形式で議事録を残す'],
+          impact: '多様な観点が増え、リスクの早期発見につながります。'
+        });
+      }
+      if (kpis.silent_cost_reduction.score < 85) {
+        recommendations.push({
+          priority: 'medium',
+          title: '停滞しやすい問いを具体化する',
+          issue: `沈黙・停滞の推定が ${silence.percentage}% あります。`,
+          actions: ['「どう思う？」ではなく選択肢付きで問いかける', '考える時間は明示して区切る', '沈黙後は論点を分解して再質問する'],
+          impact: '会議テンポの改善が見込めます。'
+        });
+      }
+      if (kpis.agenda_adherence.score < 80) {
+        recommendations.push({
+          priority: 'medium',
+          title: 'アジェンダ進行を可視化する',
+          issue: `消化率 ${agendaCoverage.completion_rate || 0}%、脱線推定 ${agendaCoverage.off_topic_percentage || 0}% です。`,
+          actions: ['各アジェンダ開始時に予定時間を読み上げる', '脱線論点は別タスク・別会議に退避する', '同じ会議名で履歴比較し、未消化項目を追跡する'],
+          impact: '未消化の削減と履歴比較精度の向上が期待できます。'
+        });
+      }
+      return recommendations.slice(0, 3);
+    }
+
+    function buildHighlights(kpis, decisions, voice, agendaCoverage) {
+      const strengths = [];
+      const weaknesses = [];
+      const risks = [];
+      const opportunities = [];
+      if (kpis.voice_diversity.score >= 75) strengths.push('参加者の発言バランスが比較的良好です。');
+      if (voice.critical_opinions_count > 0) strengths.push(`建設的な懸念・反対意見が ${voice.critical_opinions_count} 件見つかりました。`);
+      if (decisions.length >= 2) strengths.push(`決定事項を ${decisions.length} 件抽出できました。`);
+      if (kpis.pre_meeting_readiness.score < 80) weaknesses.push('事前準備の明確さが不足しています。');
+      if (kpis.decision_density.score < 70) weaknesses.push('決定事項の具体性または件数が不足しています。');
+      if ((agendaCoverage.completion_rate || 0) < 100) weaknesses.push('アジェンダ未消化または脱線の兆候があります。');
+      if (decisions.some((item) => item.issues.length)) risks.push('担当者や期限が曖昧な決定が残っています。');
+      if (voice.silent_participants.length) risks.push('発言していない参加者がいるため、認識齟齬の可能性があります。');
+      opportunities.push('話者形式の議事録に統一すると分析信頼度が向上します。');
+      opportunities.push('同一会議名で履歴比較すると、改善トレンドを追跡できます。');
+      return { strengths, weaknesses, risks, opportunities };
+    }
+
+    function buildOverallReasoning(kpis, quality) {
+      const sorted = [...KPI_META].map((meta) => ({ label: meta.label, score: kpis[meta.key].score })).sort((a, b) => b.score - a.score);
+      return `強みは ${sorted[0].label}（${sorted[0].score}点）、改善優先は ${sorted[sorted.length - 1].label}（${sorted[sorted.length - 1].score}点）です。分析信頼度は ${quality.confidence} です。`;
+    }
+
+    function calculateOverallScore(kpis) {
+      return Math.round(
+        kpis.pre_meeting_readiness.score * 0.25 +
+        kpis.decision_density.score * 0.25 +
+        kpis.voice_diversity.score * 0.15 +
+        kpis.silent_cost_reduction.score * 0.15 +
+        kpis.agenda_adherence.score * 0.20
+      );
+    }
+
+    function getGrade(score) {
+      if (score >= 90) return 'S';
+      if (score >= 80) return 'A';
+      if (score >= 70) return 'B';
+      if (score >= 60) return 'C';
+      if (score >= 50) return 'D';
+      return 'E';
+    }
+
+    function getGradeDescription(grade) {
+      return { S: '理想的な会議', A: '優秀な会議', B: '良好な会議', C: '改善の余地あり', D: '要改善', E: '抜本的な見直しが必要' }[grade];
+    }
+
+    function renderAnalysis(record) {
+      dom.emptyState.style.display = 'none';
+      dom.resultArea.style.display = 'block';
+      const result = record.analysis_result;
+      dom.confidencePill.textContent = `信頼度: ${result.analysis_confidence}`;
+      dom.meetingPill.textContent = `会議: ${record.meeting_info.title}`;
+      dom.comparisonPill.textContent = record.comparison ? `比較対象: 前回 ${record.comparison.analysis_result.overall_score}点` : '比較対象: なし';
+      dom.scoreCircle.style.setProperty('--score', result.overall_score);
+      dom.overallScore.textContent = result.overall_score;
+      dom.overallGrade.textContent = `評価 ${result.grade}`;
+      dom.gradeDescription.textContent = result.grade_description;
+      dom.overallReason.textContent = result.overall_reasoning;
+      dom.qualityFlags.innerHTML = '';
+      result.data_quality_flags.forEach((flag) => {
+        const span = document.createElement('span');
+        span.className = 'flag';
+        span.textContent = flag;
+        dom.qualityFlags.appendChild(span);
+      });
+      renderKpis(result.kpi_scores);
+      renderRecommendations(result.recommendations);
+      renderInsights(result.highlights);
+      renderDetails(record);
+      drawRadarChart(result.kpi_scores, record.comparison ? record.comparison.analysis_result.kpi_scores : null);
+    }
+
+    function renderKpis(kpis) {
+      dom.kpiGrid.innerHTML = '';
+      KPI_META.forEach((meta) => {
+        const kpi = kpis[meta.key];
+        const card = document.createElement('div');
+        card.className = 'kpi-card';
+        card.innerHTML = `
+          <h4>${meta.label}</h4>
+          <div class="kpi-meta">
+            <div class="kpi-score">${kpi.score}</div>
+            <div class="delta ${kpi.gap >= 0 ? 'pos' : 'neg'}">${kpi.gap >= 0 ? '+' : ''}${kpi.gap} / 目標 ${kpi.target}</div>
+          </div>
+          <div class="bar"><span style="width:${kpi.score}%;"></span></div>
+          <div class="subtle">${kpi.reasoning}</div>
+        `;
+        dom.kpiGrid.appendChild(card);
+      });
+    }
+  </script>
+  <script>
+    function renderRecommendations(items) {
+      dom.recommendations.innerHTML = '';
+      if (!items.length) {
+        dom.recommendations.innerHTML = '<div class="empty">改善提案はありません。</div>';
+        return;
+      }
+      items.forEach((item) => {
+        const div = document.createElement('div');
+        div.className = `recommendation ${item.priority}`;
+        div.innerHTML = `
+          <h4>${priorityLabel(item.priority)} ${item.title}</h4>
+          <div class="subtle">${item.issue}</div>
+          <ul class="list">${item.actions.map((action) => `<li>${action}</li>`).join('')}</ul>
+          <div class="footer-note">${item.impact}</div>
+        `;
+        dom.recommendations.appendChild(div);
+      });
+    }
+
+    function renderInsights(highlights) {
+      dom.insights.innerHTML = '';
+      [['強み', highlights.strengths], ['弱み', highlights.weaknesses], ['リスク', highlights.risks], ['機会', highlights.opportunities]].forEach(([title, items]) => {
+        const div = document.createElement('div');
+        div.className = 'detail-card';
+        div.innerHTML = `<h4>${title}</h4>${items.length ? `<ul class="list">${items.map((item) => `<li>${item}</li>`).join('')}</ul>` : '<div class="subtle">特記事項なし</div>'}`;
+        dom.insights.appendChild(div);
+      });
+    }
+
+    function renderDetails(record) {
+      const result = record.analysis_result;
+      const decisionHtml = result.decisions.length ? result.decisions.map((item) => `
+        <div class="detail-card">
+          <h4>${item.content}</h4>
+          <div class="meta-row">
+            <span>担当: ${item.assignees.length ? item.assignees.join(', ') : '未設定'}</span>
+            <span>期限: ${item.deadline || '未設定'}</span>
+            <span>具体性: ${item.specificity_score}/10</span>
+          </div>
+          ${item.issues.length ? `<div class="subtle">課題: ${item.issues.join(' / ')}</div>` : '<div class="subtle">課題なし</div>'}
+        </div>`).join('') : '<div class="empty">決定事項は抽出されませんでした。</div>';
+
+      const voiceRows = Object.entries(result.voice_analysis.speaker_distribution).map(([name, info]) =>
+        `<li>${name}: ${info.percentage}% / 発言回数 ${info.turn_count}</li>`).join('');
+
+      const agendaHtml = result.agenda_coverage.items.length ? result.agenda_coverage.items.map((item) => `
+        <li>${item.status === 'completed' ? '✅' : '❌'} ${item.title} / 実績 ${item.actual_minutes}分</li>`).join('') : '<li>アジェンダ未入力</li>';
+
+      const silenceHtml = result.silent_periods.map((item) =>
+        `<li>${item.context}: ${item.duration_seconds}秒（${item.estimated ? '推定' : '記録' }）</li>`).join('');
+
+      dom.detailsList.innerHTML = `
+        <div class="detail-card">
+          <h4>決定事項</h4>
+          ${decisionHtml}
+        </div>
+        <div class="detail-card">
+          <h4>発言分析</h4>
+          <div class="subtle">参加率 ${result.voice_analysis.participation_rate}% / ジニ係数 ${result.voice_analysis.gini_coefficient}</div>
+          <ul class="list">${voiceRows}</ul>
+        </div>
+        <div class="detail-card">
+          <h4>沈黙・停滞分析</h4>
+          <div class="subtle">総推定沈黙 ${result.total_silence_seconds}秒 / ${result.silence_percentage}%</div>
+          <ul class="list">${silenceHtml}</ul>
+        </div>
+        <div class="detail-card">
+          <h4>アジェンダ消化状況</h4>
+          <div class="subtle">消化率 ${result.agenda_coverage.completion_rate || 0}% / 脱線推定 ${result.agenda_coverage.off_topic_percentage || 0}%</div>
+          <ul class="list">${agendaHtml}</ul>
+        </div>
+      `;
+    }
+
+    function drawRadarChart(kpis, previous) {
+      const canvas = dom.radarCanvas;
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+      ctx.clearRect(0, 0, width, height);
+
+      const cx = width / 2;
+      const cy = height / 2 + 10;
+      const radius = 110;
+      const labels = KPI_META.map((item) => item.label);
+
+      for (let step = 1; step <= 5; step += 1) {
+        drawPolygon(ctx, cx, cy, radius * (step / 5), labels.length, '#dbe4f0', 1);
+      }
+
+      labels.forEach((label, index) => {
+        const angle = angleFor(index, labels.length);
+        const x = cx + Math.cos(angle) * (radius + 24);
+        const y = cy + Math.sin(angle) * (radius + 24);
+        ctx.fillStyle = '#475569';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, x, y);
+      });
+
+      drawDataShape(ctx, cx, cy, radius, KPI_META.map((item) => item.target), '#16a34a', true);
+      if (previous) {
+        drawDataShape(ctx, cx, cy, radius, KPI_META.map((item) => previous[item.key].score), '#94a3b8', false);
+      }
+      drawDataShape(ctx, cx, cy, radius, KPI_META.map((item) => kpis[item.key].score), '#2563eb', false);
+    }
+
+    function drawPolygon(ctx, cx, cy, radius, points, color, width) {
+      ctx.beginPath();
+      for (let i = 0; i < points; i += 1) {
+        const angle = angleFor(i, points);
+        const x = cx + Math.cos(angle) * radius;
+        const y = cy + Math.sin(angle) * radius;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.stroke();
+    }
+
+    function drawDataShape(ctx, cx, cy, radius, values, color, dashed) {
+      ctx.beginPath();
+      values.forEach((value, index) => {
+        const angle = angleFor(index, values.length);
+        const distance = radius * (value / 100);
+        const x = cx + Math.cos(angle) * distance;
+        const y = cy + Math.sin(angle) * distance;
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.closePath();
+      ctx.setLineDash(dashed ? [6, 6] : []);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      if (!dashed) {
+        ctx.fillStyle = hexToRgba(color, 0.12);
+        ctx.fill();
+      }
+      ctx.setLineDash([]);
+    }
+
+    function angleFor(index, total) {
+      return (-Math.PI / 2) + (Math.PI * 2 * index / total);
+    }
+
+    function renderHistory() {
+      const history = getHistory();
+      dom.historyList.innerHTML = '';
+      if (!history.length) {
+        dom.historyList.innerHTML = '<div class="empty">保存された会議はありません。</div>';
+        return;
+      }
+      history.forEach((item) => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `
+          <h4>${item.meeting_info.title}</h4>
+          <div class="meta-row">
+            <span>${item.meeting_info.date}</span>
+            <span>スコア ${item.analysis_result.overall_score}</span>
+            <span>評価 ${item.analysis_result.grade}</span>
+          </div>
+          <div class="actions">
+            <button class="btn-secondary" data-action="load" data-id="${item.meeting_id}">表示</button>
+            <button class="btn-danger" data-action="delete" data-id="${item.meeting_id}">削除</button>
+          </div>
+        `;
+        div.querySelector('[data-action="load"]').addEventListener('click', () => loadFromHistory(item.meeting_id));
+        div.querySelector('[data-action="delete"]').addEventListener('click', () => deleteHistoryItem(item.meeting_id));
+        dom.historyList.appendChild(div);
+      });
+    }
+
+    function loadFromHistory(id) {
+      const item = getHistory().find((entry) => entry.meeting_id === id);
+      if (!item) return;
+      currentRecord = item;
+      dom.meetingTitle.value = item.meeting_info.title;
+      dom.meetingDate.value = item.meeting_info.date;
+      dom.meetingTime.value = item.meeting_info.time;
+      dom.meetingDuration.value = item.meeting_info.duration_minutes;
+      dom.participants.value = item.meeting_info.participants.join(', ');
+      dom.advanceNotice.value = item.pre_meeting.advance_notice_hours || 0;
+      dom.agendaText.value = item.pre_meeting.agenda_text || '';
+      dom.transcriptText.value = item.transcript.raw_text || '';
+      renderAnalysis(item);
+      setMessage('履歴から会議を読み込みました。', 'notice');
+    }
+
+    function deleteHistoryItem(id) {
+      const next = getHistory().filter((item) => item.meeting_id !== id);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      renderHistory();
+      setMessage('履歴を削除しました。', 'notice');
+    }
+
+    function saveRecord(record) {
+      const history = getHistory().filter((item) => item.meeting_id !== record.meeting_id);
+      history.unshift(record);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, 30)));
+    }
+
+    function getHistory() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function clearHistory() {
+      localStorage.removeItem(STORAGE_KEY);
+      renderHistory();
+      setMessage('履歴を削除しました。', 'notice');
+    }
+
+    function exportHistory() {
+      downloadFile(JSON.stringify(getHistory(), null, 2), 'meeting-history.json', 'application/json');
+    }
+
+    function findPreviousByTitle(title) {
+      return getHistory().find((item) => item.meeting_info.title === title) || null;
+    }
+
+    function downloadReport() {
+      if (!currentRecord) {
+        setMessage('先に分析を実行してください。', 'warning-box');
+        return;
+      }
+      const report = generateMarkdown(currentRecord);
+      downloadFile(report, `${slugify(currentRecord.meeting_info.title)}-report.md`, 'text/markdown');
+    }
+
+    function downloadCurrentJson() {
+      if (!currentRecord) {
+        setMessage('先に分析を実行してください。', 'warning-box');
+        return;
+      }
+      downloadFile(JSON.stringify(currentRecord, null, 2), `${slugify(currentRecord.meeting_info.title)}.json`, 'application/json');
+    }
+
+    function generateMarkdown(record) {
+      const result = record.analysis_result;
+      return `# 会議分析レポート
+
+## 会議情報
+- 会議名: ${record.meeting_info.title}
+- 日時: ${record.meeting_info.date} ${record.meeting_info.time}
+- 会議時間: ${record.meeting_info.duration_minutes}分
+- 参加者: ${record.meeting_info.participants.join(', ')}
+
+## 総合評価
+- スコア: ${result.overall_score}
+- 評価: ${result.grade}（${result.grade_description}）
+- 信頼度: ${result.analysis_confidence}
+
+## KPI
+${KPI_META.map((meta) => `- ${meta.label}: ${result.kpi_scores[meta.key].score}点`).join('\n')}
+
+## 改善提案
+${result.recommendations.map((item, index) => `${index + 1}. ${item.title}\n   - 優先度: ${item.priority}\n   - 課題: ${item.issue}\n   - アクション: ${item.actions.join(' / ')}`).join('\n')}
+
+## 品質フラグ
+${result.data_quality_flags.length ? result.data_quality_flags.map((flag) => `- ${flag}`).join('\n') : '- なし'}
+`;
+    }
+
+    function downloadFile(content, filename, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function setMessage(message, className) {
+      dom.formMessage.className = className;
+      dom.formMessage.textContent = message;
+    }
+
+    function clearResult() {
+      dom.emptyState.style.display = 'block';
+      dom.resultArea.style.display = 'none';
+      dom.kpiGrid.innerHTML = '';
+      dom.recommendations.innerHTML = '';
+      dom.insights.innerHTML = '';
+      dom.detailsList.innerHTML = '';
+      dom.qualityFlags.innerHTML = '';
+      const ctx = dom.radarCanvas.getContext('2d');
+      ctx.clearRect(0, 0, dom.radarCanvas.width, dom.radarCanvas.height);
+    }
+
+    function priorityLabel(priority) {
+      return priority === 'high' ? '🔴' : priority === 'medium' ? '🟡' : '🟢';
+    }
+
+    function clamp(value) {
+      return Math.max(0, Math.min(100, value));
+    }
+
+    function calculateGini(values) {
+      if (!values.length) return 0;
+      const sorted = [...values].sort((a, b) => a - b);
+      const n = sorted.length;
+      const sum = sorted.reduce((acc, value) => acc + value, 0);
+      if (sum === 0) return 0;
+      let weighted = 0;
+      for (let i = 0; i < n; i += 1) weighted += (i + 1) * sorted[i];
+      return (2 * weighted) / (n * sum) - (n + 1) / n;
+    }
+
+    function hexToRgba(hex, alpha) {
+      const value = hex.replace('#', '');
+      const bigint = parseInt(value, 16);
+      const r = (bigint >> 16) & 255;
+      const g = (bigint >> 8) & 255;
+      const b = bigint & 255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function slugify(text) {
+      return text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-ぁ-んァ-ヶ一-龠]/g, '');
+    }
+
+    init();
+  </script>
+</body>
+</html>
